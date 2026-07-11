@@ -60,45 +60,5 @@ npm run deploy
 
 ## API Reference
 
-### ایجاد پرداخت
-```
-POST /api/payment/create
-Authorization: Bearer <service_token>
-
-{
-  "order_id": "ORD-001",
-  "amount_rials": 500000,
-  "description": "اشتراک ماهانه",
-  "expires_minutes": 60
-}
-```
-
-### دریافت SMS (از بات تلگرام یا هر منبع دیگر)
-```
-POST /api/sms/receive
-Authorization: Bearer <sms_receiver_token>   ← فقط اگر از پنل فعال باشد (پیش‌فرض: فعال)
-
-{
-  "message": "متن پیامک بانکی"
-}
-```
-
-### وضعیت پرداخت
-```
-GET /api/payment/status/<order_id>
-Authorization: Bearer <service_token>
-```
-
-### تأیید دستی
-```
-POST /api/payment/manual-confirm
-Authorization: Bearer <service_token>
-
-{ "payment_id": 5, "note": "..." }
-```
-
-### لیست پرداخت‌های یک سرویس
-```
-GET /api/payments/list
-Authorization: Bearer <service_token>
-```
+مستندات کامل API برای ارتباط بین درگاه و سایت فروشنده (ساخت پرداخت، لینک
+فاکتور/چک‌اوت، پولینگ وضعیت، callback و تأیید دستی): **[docs/API.md](docs/API.md)**
