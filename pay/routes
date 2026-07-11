@@ -1,0 +1,24 @@
+"""pay/routes.py — صفحه درگاه پرداخت مشتری"""
+from flask import Blueprint, render_template, abort
+from models import get_payment_by_token, get_cards
+
+pay_bp = Blueprint("pay", __name__, url_prefix="/pay")
+
+
+@pay_bp.get("/<pay_token>")
+def payment_page(pay_token: str):
+    payment = get_payment_by_token(pay_token)
+    if not payment:
+        abort(404)
+
+    # اگه منقضی شده
+    from datetime import datetime
+    if payment["expires_at"] and payment["expires_at"] < datetime.now().strftime("%Y-%m-%d %H:%M:%S"):
+        return render_template("pay_expired.html", payment=payment)
+
+    # اگه قبلاً تأیید شده
+    if payment["status"] == "matched":
+        return render_template("pay_success.html", payment=payment)
+
+    cards = get_cards(active_only=True)
+    return render_template("pay.html", payment=payment, cards=cards)
