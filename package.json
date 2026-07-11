@@ -1,0 +1,16 @@
+{
+  "name": "aryalleh-pay",
+  "private": true,
+  "version": "2.0.0",
+  "description": "پلتفرم مرکزی پرداخت کارت‌به‌کارت — Cloudflare Pages Functions + D1",
+  "scripts": {
+    "dev": "wrangler pages dev public --d1=DB",
+    "deploy": "wrangler pages deploy public",
+    "db:create": "wrangler d1 create aryalleh_pay",
+    "db:migrate:local": "wrangler d1 execute aryalleh_pay --local --file=schema.sql",
+    "db:migrate:remote": "wrangler d1 execute aryalleh_pay --remote --file=schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^3.78.0"
+  }
+}
