@@ -11,6 +11,28 @@
 - **کلید محرمانهٔ SMS قابل‌تنظیم**: از پنل → تنظیمات می‌توانید مشخص کنید که آیا `POST /api/sms/receive` به هدر `Authorization: Bearer <sms_token>` نیاز دارد یا نه (پیش‌فرض: نیاز دارد).
 - اجرا روی Cloudflare Pages Functions با پایگاه‌دادهٔ D1 (سازگار با SQLite).
 
+## تصاویر رابط کاربری
+
+| ورود | داشبورد |
+|---|---|
+| ![ورود](docs/screenshots/login.png) | ![داشبورد](docs/screenshots/dashboard.png) |
+
+| سرویس‌ها (API Keys) | کارت‌های مجاز به ازای هر سرویس |
+|---|---|
+| ![سرویس‌ها](docs/screenshots/services.png) | ![کارت‌های مجاز](docs/screenshots/service-cards.png) |
+
+| کارت‌ها | پرداخت‌ها |
+|---|---|
+| ![کارت‌ها](docs/screenshots/cards.png) | ![پرداخت‌ها](docs/screenshots/payments.png) |
+
+| تراکنش‌ها | تنظیمات (بات، کلید SMS، رمز عبور) |
+|---|---|
+| ![تراکنش‌ها](docs/screenshots/transactions.png) | ![تنظیمات](docs/screenshots/settings.png) |
+
+| صفحهٔ پرداخت مشتری | پرداخت موفق |
+|---|---|
+| ![صفحهٔ پرداخت](docs/screenshots/pay-checkout.png) | ![پرداخت موفق](docs/screenshots/pay-success.png) |
+
 ## راه‌اندازی
 
 ```bash
