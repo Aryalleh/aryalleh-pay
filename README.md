@@ -63,7 +63,8 @@ npm run deploy
 برای دریافت پیامک‌های بانکی روی گوشی و ارسال خودکارشان به AryallehPay، اپ اندروید
 اختصاصی رو نصب کنید:
 
-**[⬇️ دانلود AryallehPay APK](https://github.com/Aryalleh/aryalleh-pay-apk/releases/tag/Aryalleh-pay)**
+- مخزن سورس اپ: **[Aryalleh/aryalleh-pay-apk](https://github.com/Aryalleh/aryalleh-pay-apk)**
+- دانلود مستقیم APK: **[⬇️ Aryalleh-pay release](https://github.com/Aryalleh/aryalleh-pay-apk/releases/tag/Aryalleh-pay)**
 
 اپ رو روی گوشی‌ای نصب کنید که پیامک‌های بانکی رو دریافت می‌کنه، و در تنظیمات اپ دو
 مقدار زیر رو وارد کنید:
