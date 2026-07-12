@@ -46,13 +46,20 @@ Content-Type: application/json
 | `expires_minutes` | integer | no | Default `60`. After this, the invoice link shows "expired" and stops matching incoming SMS. |
 | `redirect_url` | string | no | Where the customer is sent after the checkout page detects payment. If omitted, the checkout page just shows a success state in place. |
 
-**Why amount must be unique while pending**: matching is done by reading the
-deposit amount off the bank SMS — there's no other reference number to key
-off. Two different sellers (or two orders of the same seller) with the exact
-same open amount at the same time would be ambiguous, so the gateway rejects
-the second one with `409 amount_conflict`. Add/subtract a few Rials if you
-hit this (some sellers add a small random offset like `+120` Rials per
-invoice specifically to avoid collisions).
+**Why amount must be unique while pending, and how that's handled**: matching
+is done by reading the deposit amount off the bank SMS — there's no other
+reference number to key off. Two open invoices (yours or anyone else's on the
+gateway) can't share the exact same pending amount at the same time, or a
+payment couldn't be matched unambiguously.
+
+You don't need to handle this yourself: if the `amount_rials` you send is
+already pending elsewhere, the gateway **automatically nudges it up** by a
+small random number of Rials until it's unique, and returns the actual amount
+in `amount_rials` on the response — **display that amount to the customer,
+not the one you sent**, since that's the exact figure the gateway will match
+against the incoming SMS. Once a payment is matched (paid) or expires, its
+amount stops being "pending" and is automatically free for reuse by any
+future invoice — nothing to clean up on your end.
 
 **Example**
 
@@ -74,22 +81,33 @@ curl -X POST https://aryalleh-pay.pages.dev/api/payment/create \
 {
   "ok": true,
   "id": 17,
+  "amount_rials": 500386,
+  "requested_amount_rials": 500000,
+  "amount_adjusted": true,
   "expires_at": "2026-07-11 21:10:00",
   "pay_token": "aBcD3f-9xyz...",
   "pay_url": "/pay/aBcD3f-9xyz..."
 }
 ```
 
+`amount_rials` is the amount actually stored and matched against — show this
+one to the customer. `requested_amount_rials` is what you sent, and
+`amount_adjusted` tells you at a glance whether the gateway had to bump it.
+When there's no collision, `amount_rials` simply equals what you requested
+and `amount_adjusted` is `false`.
+
 `pay_url` is a **relative path** — prefix it with your gateway's base URL to
 get the full invoice link customers should be redirected to:
-`https://aryalleh-pay.pages.dev/pay/aBcD3f-9xyz...`
+`https://aryalleh-pay.pages.dev/pay/aBcD3f-9xyz...` (its checkout page already
+shows the adjusted amount, so linking to it instead of rendering your own
+amount is the safest option).
 
 **Errors**
 | Status | Body | Meaning |
 |---|---|---|
 | 400 | `{"ok":false,"error":"order_id and amount_rials are required"}` | Missing required field |
 | 401 | `{"ok":false,"error":"Unauthorized"}` | Bad/missing token |
-| 409 | `{"ok":false,"error":"amount_conflict","message":"..."}` | Amount already pending elsewhere — retry with a different amount |
+| 409 | `{"ok":false,"error":"در حال حاضر امکان یافتن مبلغ یکتا نبود..."}` | Extremely unlikely — the gateway couldn't find a free amount nearby after many attempts; retry shortly |
 | 409 | `{"ok":false,"error":"order_id 'ORD-1042' already exists for this service"}` | Duplicate `order_id` for this service |
 
 ---

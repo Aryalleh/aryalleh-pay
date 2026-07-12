@@ -1,6 +1,6 @@
 // POST /api/payment/create — Authorization: Bearer <service_token>
 import { authService, unauthorized } from "../../../lib/auth.js";
-import { isAmountPending, createPendingPayment } from "../../../lib/db.js";
+import { findUniqueAmount, createPendingPayment } from "../../../lib/db.js";
 import { jsonResponse } from "../../../lib/render.js";
 
 export async function onRequestPost(context) {
@@ -22,17 +22,23 @@ export async function onRequestPost(context) {
         amountRials = parseInt(amountRials, 10);
         const redirectUrl = data.redirect_url || "";
 
-        if (await isAmountPending(env, amountRials)) {
-            return jsonResponse({
-                ok: false,
-                error: "amount_conflict",
-                message: `مبلغ ${amountRials.toLocaleString("en-US")} ریال در حال حاضر روی یه سفارش دیگه pending است. چند ریال تفاوت بده تا یکتا بشه.`,
-            }, 409);
-        }
+        // Matching happens purely off the deposited amount, so it must be
+        // unique among currently-pending payments. Rather than bouncing the
+        // request back with a conflict, nudge it up by a few Rials
+        // automatically — the caller must display the returned amount_rials
+        // (not the one it sent) to the customer. Once this payment is
+        // matched or expires, the amount frees up for reuse on its own.
+        const finalAmount = await findUniqueAmount(env, amountRials);
 
-        const result = await createPendingPayment(env, svc.id, orderId, amountRials, description, expiresMinutes, redirectUrl);
+        const result = await createPendingPayment(env, svc.id, orderId, finalAmount, description, expiresMinutes, redirectUrl);
         const payUrl = `/pay/${result.pay_token}`;
-        return jsonResponse({ ok: true, ...result, pay_url: payUrl });
+        return jsonResponse({
+            ok: true,
+            ...result,
+            pay_url: payUrl,
+            requested_amount_rials: amountRials,
+            amount_adjusted: finalAmount !== amountRials,
+        });
     } catch (e) {
         return jsonResponse({ ok: false, error: String(e.message || e) }, 409);
     }
