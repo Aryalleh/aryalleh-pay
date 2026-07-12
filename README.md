@@ -58,47 +58,30 @@ npm run deploy
   → GET /api/payment/status/<order_id>  (پولینگ وضعیت)
 ```
 
+## اتصال پیامک بانکی (اپ اندروید)
+
+برای دریافت پیامک‌های بانکی روی گوشی و ارسال خودکارشان به AryallehPay، اپ اندروید
+اختصاصی رو نصب کنید:
+
+- مخزن سورس اپ: **[Aryalleh/aryalleh-pay-apk](https://github.com/Aryalleh/aryalleh-pay-apk)**
+- دانلود مستقیم APK: **[⬇️ Aryalleh-pay release](https://github.com/Aryalleh/aryalleh-pay-apk/releases/tag/Aryalleh-pay)**
+
+اپ رو روی گوشی‌ای نصب کنید که پیامک‌های بانکی رو دریافت می‌کنه، و در تنظیمات اپ دو
+مقدار زیر رو وارد کنید:
+
+- **آدرس درگاه**: دامنهٔ همین پروژه روی Cloudflare Pages (مثلاً `https://aryalleh-pay.pages.dev`)
+- **کلید محرمانهٔ SMS**: از پنل → تنظیمات → «کلید محرمانهٔ دریافت پیامک»
+
+اپ هر پیامک ورودی رو به `POST /api/sms/receive` می‌فرسته (جزئیات کامل در
+[docs/API.md](docs/API.md)).
+
+### بانک‌های پشتیبانی‌شده
+
+- بلو بانک
+- بانک رسالت (ResalatBank)
+- بانک خاورمیانه
+
 ## API Reference
 
-### ایجاد پرداخت
-```
-POST /api/payment/create
-Authorization: Bearer <service_token>
-
-{
-  "order_id": "ORD-001",
-  "amount_rials": 500000,
-  "description": "اشتراک ماهانه",
-  "expires_minutes": 60
-}
-```
-
-### دریافت SMS (از بات تلگرام یا هر منبع دیگر)
-```
-POST /api/sms/receive
-Authorization: Bearer <sms_receiver_token>   ← فقط اگر از پنل فعال باشد (پیش‌فرض: فعال)
-
-{
-  "message": "متن پیامک بانکی"
-}
-```
-
-### وضعیت پرداخت
-```
-GET /api/payment/status/<order_id>
-Authorization: Bearer <service_token>
-```
-
-### تأیید دستی
-```
-POST /api/payment/manual-confirm
-Authorization: Bearer <service_token>
-
-{ "payment_id": 5, "note": "..." }
-```
-
-### لیست پرداخت‌های یک سرویس
-```
-GET /api/payments/list
-Authorization: Bearer <service_token>
-```
+مستندات کامل API برای ارتباط بین درگاه و سایت فروشنده (ساخت پرداخت، لینک
+فاکتور/چک‌اوت، پولینگ وضعیت، callback و تأیید دستی): **[docs/API.md](docs/API.md)**
