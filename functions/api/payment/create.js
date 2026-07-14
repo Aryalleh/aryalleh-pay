@@ -12,11 +12,11 @@ export async function onRequestPost(context) {
     const orderId = data.order_id;
     let amountRials = data.amount_rials;
     const description = data.description || "";
-    // An explicit expires_minutes always wins; otherwise fall back to this
-    // service's configured default (panel → services → "مبلغ / انقضا").
-    const expiresMinutes = data.expires_minutes != null
-        ? parseInt(data.expires_minutes, 10)
-        : (svc.default_expire_hours || 1) * 60;
+    // The service's configured expiry (panel → services → "مبلغ / انقضا")
+    // always wins — expires_minutes from the request body is ignored,
+    // since sellers' integrations often hardcode their own value, which
+    // would otherwise silently override whatever the admin sets in the panel.
+    const expiresMinutes = (svc.default_expire_hours || 1) * 60;
 
     if (!orderId || !amountRials) {
         return jsonResponse({ ok: false, error: "order_id and amount_rials are required" }, 400);
