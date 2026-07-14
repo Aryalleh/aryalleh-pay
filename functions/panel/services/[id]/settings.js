@@ -27,11 +27,12 @@ export async function onRequestGet(context) {
       روشن: اگر مبلغ درخواستی الان روی یک سفارش دیگه در انتظار باشد، درگاه خودش چند ریال بهش اضافه می‌کند تا یکتا شود.
       خاموش: در این حالت مسئولیت یکتا بودن مبلغ با خود سایت فروشنده است؛ در صورت تداخل درگاه خطای <span class="mono">amount_conflict</span> برمی‌گرداند.
     </p>
-    <label>انقضای پیش‌فرض پرداخت (ساعت)
+    <label>انقضای پرداخت (ساعت)
       <input type="number" name="default_expire_hours" min="1" max="720" value="${esc(svc.default_expire_hours ?? 1)}">
     </label>
     <p class="muted" style="margin-top:-6px">
-      اگر سرویس هنگام ساخت پرداخت مقدار <span class="mono">expires_minutes</span> نفرستد، همین مقدار (به ساعت) استفاده می‌شود.
+      همیشه همین مقدار برای پرداخت‌های این سرویس استفاده می‌شود — حتی اگر خود سرویس هنگام ساخت پرداخت مقدار
+      <span class="mono">expires_minutes</span> بفرستد، نادیده گرفته می‌شود.
     </p>
     <div style="margin-top:16px">
       <button type="submit">ذخیره</button>

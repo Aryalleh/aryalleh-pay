@@ -43,8 +43,16 @@ Content-Type: application/json
 | `order_id` | string | yes | Your own order/invoice ID. Must be unique **per service** — reusing one that already has a pending/matched payment fails. |
 | `amount_rials` | integer | yes | Exact amount in Rials. Must be unique among currently-pending payments **across the whole gateway** (see below). |
 | `description` | string | no | Shown to the customer on the checkout page. |
-| `expires_minutes` | integer | no | Overrides this service's configured default expiry (panel → Services → "مبلغ / انقضا", in hours; falls back to 1 hour if never set). After expiry, the invoice link shows "expired" and stops matching incoming SMS. |
 | `redirect_url` | string | no | Where the customer is sent after the checkout page detects payment. If omitted, the checkout page just shows a success state in place. |
+
+**Expiry is controlled entirely by the panel, not by the request.** There is
+no `expires_minutes` request field — every payment's expiry is set to this
+service's configured value (panel → Services → "مبلغ / انقضا", in hours;
+1 hour if never changed). This is intentional: letting the request override
+expiry meant a seller's integration hardcoding its own value (e.g. always
+sending 60 minutes) would silently defeat whatever the admin configured in
+the panel — which is exactly what happened in practice. If you need a
+different expiry for a given service, change it from the panel.
 
 **Why amount must be unique while pending, and how that's handled**: matching
 is done by reading the deposit amount off the bank SMS — there's no other
@@ -81,7 +89,6 @@ curl -X POST https://aryalleh-pay.pages.dev/api/payment/create \
     "order_id": "ORD-1042",
     "amount_rials": 500000,
     "description": "اشتراک یک ماهه",
-    "expires_minutes": 30,
     "redirect_url": "https://myshop.example.com/thanks?order=ORD-1042"
   }'
 ```
