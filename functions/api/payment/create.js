@@ -1,6 +1,6 @@
 // POST /api/payment/create — Authorization: Bearer <service_token>
 import { authService, unauthorized } from "../../../lib/auth.js";
-import { findUniqueAmount, createPendingPayment } from "../../../lib/db.js";
+import { findUniqueAmount, isAmountPending, createPendingPayment } from "../../../lib/db.js";
 import { jsonResponse } from "../../../lib/render.js";
 
 export async function onRequestPost(context) {
@@ -12,7 +12,11 @@ export async function onRequestPost(context) {
     const orderId = data.order_id;
     let amountRials = data.amount_rials;
     const description = data.description || "";
-    const expiresMinutes = parseInt(data.expires_minutes ?? 60, 10);
+    // An explicit expires_minutes always wins; otherwise fall back to this
+    // service's configured default (panel → services → "مبلغ / انقضا").
+    const expiresMinutes = data.expires_minutes != null
+        ? parseInt(data.expires_minutes, 10)
+        : (svc.default_expire_hours || 1) * 60;
 
     if (!orderId || !amountRials) {
         return jsonResponse({ ok: false, error: "order_id and amount_rials are required" }, 400);
@@ -23,12 +27,20 @@ export async function onRequestPost(context) {
         const redirectUrl = data.redirect_url || "";
 
         // Matching happens purely off the deposited amount, so it must be
-        // unique among currently-pending payments. Rather than bouncing the
-        // request back with a conflict, nudge it up by a few Rials
-        // automatically — the caller must display the returned amount_rials
-        // (not the one it sent) to the customer. Once this payment is
-        // matched or expires, the amount frees up for reuse on its own.
-        const finalAmount = await findUniqueAmount(env, amountRials);
+        // unique among currently-pending payments. Whether the gateway
+        // auto-bumps a conflicting amount or leaves uniqueness up to the
+        // seller (returning 409 amount_conflict instead) is a per-service
+        // setting — some sellers already generate unique amounts themselves.
+        let finalAmount = amountRials;
+        if (svc.auto_adjust_amount) {
+            finalAmount = await findUniqueAmount(env, amountRials);
+        } else if (await isAmountPending(env, amountRials)) {
+            return jsonResponse({
+                ok: false,
+                error: "amount_conflict",
+                message: `مبلغ ${amountRials.toLocaleString("en-US")} ریال در حال حاضر روی یه سفارش دیگه pending است. چند ریال تفاوت بده تا یکتا بشه.`,
+            }, 409);
+        }
 
         const result = await createPendingPayment(env, svc.id, orderId, finalAmount, description, expiresMinutes, redirectUrl);
         const payUrl = `/pay/${result.pay_token}`;

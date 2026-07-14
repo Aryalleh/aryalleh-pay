@@ -43,7 +43,7 @@ Content-Type: application/json
 | `order_id` | string | yes | Your own order/invoice ID. Must be unique **per service** — reusing one that already has a pending/matched payment fails. |
 | `amount_rials` | integer | yes | Exact amount in Rials. Must be unique among currently-pending payments **across the whole gateway** (see below). |
 | `description` | string | no | Shown to the customer on the checkout page. |
-| `expires_minutes` | integer | no | Default `60`. After this, the invoice link shows "expired" and stops matching incoming SMS. |
+| `expires_minutes` | integer | no | Overrides this service's configured default expiry (panel → Services → "مبلغ / انقضا", in hours; falls back to 1 hour if never set). After expiry, the invoice link shows "expired" and stops matching incoming SMS. |
 | `redirect_url` | string | no | Where the customer is sent after the checkout page detects payment. If omitted, the checkout page just shows a success state in place. |
 
 **Why amount must be unique while pending, and how that's handled**: matching
@@ -52,14 +52,24 @@ reference number to key off. Two open invoices (yours or anyone else's on the
 gateway) can't share the exact same pending amount at the same time, or a
 payment couldn't be matched unambiguously.
 
-You don't need to handle this yourself: if the `amount_rials` you send is
-already pending elsewhere, the gateway **automatically nudges it up** by a
-small random number of Rials until it's unique, and returns the actual amount
-in `amount_rials` on the response — **display that amount to the customer,
-not the one you sent**, since that's the exact figure the gateway will match
-against the incoming SMS. Once a payment is matched (paid) or expires, its
-amount stops being "pending" and is automatically free for reuse by any
-future invoice — nothing to clean up on your end.
+Whether the gateway handles this for you is a **per-service setting** (panel →
+Services → "یکتاسازی خودکار مبلغ توسط درگاه"):
+
+- **On (default)**: if the `amount_rials` you send is already pending
+  elsewhere, the gateway **automatically nudges it up** by a small random
+  number of Rials until it's unique, and returns the actual amount in
+  `amount_rials` on the response — **display that amount to the customer, not
+  the one you sent**, since that's the exact figure the gateway will match
+  against the incoming SMS.
+- **Off**: the gateway leaves uniqueness entirely up to you and responds with
+  `409 amount_conflict` on collision instead of adjusting anything — pick this
+  if your own site already generates unique amounts (e.g. adding a random
+  cents-equivalent offset itself) and you'd rather see the conflict than have
+  the gateway silently change the price.
+
+Either way, once a payment is matched (paid) or expires, its amount stops
+being "pending" and is automatically free for reuse by any future invoice —
+nothing to clean up on your end.
 
 **Example**
 
@@ -107,7 +117,8 @@ amount is the safest option).
 |---|---|---|
 | 400 | `{"ok":false,"error":"order_id and amount_rials are required"}` | Missing required field |
 | 401 | `{"ok":false,"error":"Unauthorized"}` | Bad/missing token |
-| 409 | `{"ok":false,"error":"در حال حاضر امکان یافتن مبلغ یکتا نبود..."}` | Extremely unlikely — the gateway couldn't find a free amount nearby after many attempts; retry shortly |
+| 409 | `{"ok":false,"error":"amount_conflict","message":"..."}` | Only when this service has auto-adjust **off** — amount already pending elsewhere, retry with a different one |
+| 409 | `{"ok":false,"error":"در حال حاضر امکان یافتن مبلغ یکتا نبود..."}` | Only when auto-adjust is **on** — extremely unlikely; the gateway couldn't find a free amount nearby after many attempts |
 | 409 | `{"ok":false,"error":"order_id 'ORD-1042' already exists for this service"}` | Duplicate `order_id` for this service |
 
 ---

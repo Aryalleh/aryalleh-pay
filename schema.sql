@@ -1,12 +1,19 @@
 -- schema.sql — AryallehPay D1 schema (Cloudflare)
 CREATE TABLE IF NOT EXISTS services (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    name         TEXT NOT NULL UNIQUE,
-    description  TEXT,
-    token        TEXT NOT NULL UNIQUE,
-    callback_url TEXT,
-    is_active    INTEGER DEFAULT 1,
-    created_at   TEXT DEFAULT (datetime('now'))
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name                 TEXT NOT NULL UNIQUE,
+    description          TEXT,
+    token                TEXT NOT NULL UNIQUE,
+    callback_url         TEXT,
+    is_active            INTEGER DEFAULT 1,
+    -- 1 = gateway auto-bumps a conflicting amount_rials by a few Rials;
+    -- 0 = the seller site is responsible for uniqueness, gateway returns
+    -- 409 amount_conflict on collision instead of adjusting it.
+    auto_adjust_amount   INTEGER DEFAULT 1,
+    -- Default payment expiry in hours, used when a payment/create call
+    -- doesn't pass its own expires_minutes.
+    default_expire_hours INTEGER DEFAULT 1,
+    created_at           TEXT DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS pending_payments (
