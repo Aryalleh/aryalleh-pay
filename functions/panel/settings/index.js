@@ -1,12 +1,12 @@
 // functions/panel/settings/index.js
-import { getBotSettings, getServices, getSmsToken, isSmsTokenRequired } from "../../../lib/db.js";
+import { getBotSettings, getServices, getSmsToken, isSmsTokenRequired, isNotifyAllSmsEnabled } from "../../../lib/db.js";
 import { readFlash } from "../../../lib/session.js";
 import { renderPage, esc } from "../../../lib/render.js";
 
 export async function onRequestGet(context) {
     const { request, env } = context;
-    const [bot, services, smsToken, smsRequired, flash] = await Promise.all([
-        getBotSettings(env), getServices(env), getSmsToken(env), isSmsTokenRequired(env), Promise.resolve(readFlash(request)),
+    const [bot, services, smsToken, smsRequired, notifyAllSms, flash] = await Promise.all([
+        getBotSettings(env), getServices(env), getSmsToken(env), isSmsTokenRequired(env), isNotifyAllSmsEnabled(env), Promise.resolve(readFlash(request)),
     ]);
     const origin = new URL(request.url).origin;
 
@@ -44,6 +44,20 @@ export async function onRequestGet(context) {
     <label style="display:flex;align-items:center;gap:8px">
       <input type="checkbox" name="required" value="1" style="width:auto" ${smsRequired ? "checked" : ""}>
       <span>الزامی بودن این کلید برای POST /api/sms/receive ${smsRequired ? "(فعال)" : "(غیرفعال — هر کسی می‌تواند بدون توکن پیامک ارسال کند)"}</span>
+    </label>
+    <button class="secondary" type="submit" style="margin-top:10px">اعمال</button>
+  </form>
+</div>
+
+<div class="card-box">
+  <h3 style="margin-top:0">لیسن تو ال (Listen to all)</h3>
+  <p class="muted">وقتی فعال باشد، متن هر پیامکی که از طریق <span class="mono">POST /api/sms/receive</span>
+  به سرور می‌رسد — چه پرداختی را تأیید کند چه نکند، حتی اگر اصلاً قابل تجزیه نباشد — مستقیماً برای ادمین در تلگرام ارسال می‌شود.
+  (نیازمند تنظیم بات تلگرام در بالای همین صفحه است.)</p>
+  <form method="post" action="/panel/settings/toggle-notify-all-sms">
+    <label style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" name="enabled" value="1" style="width:auto" ${notifyAllSms ? "checked" : ""}>
+      <span>ارسال متن همهٔ پیامک‌های دریافتی از API به ادمین ${notifyAllSms ? "(فعال)" : "(غیرفعال)"}</span>
     </label>
     <button class="secondary" type="submit" style="margin-top:10px">اعمال</button>
   </form>
