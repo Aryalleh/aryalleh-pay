@@ -130,7 +130,69 @@ amount is the safest option).
 
 ---
 
-## 2. The invoice/checkout link
+## 2. Change a pending payment's amount
+
+```
+POST /api/payment/update-amount
+Authorization: Bearer <service_token>
+Content-Type: application/json
+```
+
+**Body**
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `order_id` | string | yes | The order you created earlier via `payment/create`. |
+| `amount_rials` | integer | yes | The new amount in Rials. |
+
+**Only works while the payment is still `pending`.** Once it's been matched
+(paid), the amount is financial history and this endpoint refuses to touch
+it — a paid invoice's recorded amount never gets silently rewritten, even if
+you call this right after payment. The same per-service amount policy as
+`payment/create` applies here too: if this service has amount auto-adjust
+**on**, a colliding new amount gets nudged up automatically (response tells
+you the final amount); if **off**, a collision returns `409 amount_conflict`
+instead.
+
+If the customer already has the checkout page (`/pay/<pay_token>`) open,
+they'll see the updated amount on its next 5-second poll — no separate
+action needed on your end.
+
+**Example**
+
+```bash
+curl -X POST https://aryalleh-pay.pages.dev/api/payment/update-amount \
+  -H "Authorization: Bearer aryp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "order_id": "ORD-1042",
+    "amount_rials": 650000
+  }'
+```
+
+**Success — `200`**
+```json
+{
+  "ok": true,
+  "order_id": "ORD-1042",
+  "amount_rials": 650386,
+  "requested_amount_rials": 650000,
+  "amount_adjusted": true
+}
+```
+
+**Errors**
+| Status | Body | Meaning |
+|---|---|---|
+| 400 | `{"ok":false,"error":"order_id and amount_rials are required"}` | Missing required field |
+| 401 | `{"ok":false,"error":"Unauthorized"}` | Bad/missing token |
+| 404 | `{"ok":false,"error":"Not found"}` | No such `order_id` for this service |
+| 409 | `{"ok":false,"error":"already_paid","message":"..."}` | Payment is already matched (paid) — amount is locked |
+| 409 | `{"ok":false,"error":"amount_conflict","message":"..."}` | Only when this service has auto-adjust **off** — new amount already pending elsewhere |
+
+---
+
+## 3. The invoice/checkout link
 
 `GET /pay/<pay_token>` — **no auth**, this is what you redirect the customer
 to (or embed as a link/QR code). It renders one of three states, and **the
@@ -152,7 +214,7 @@ specific cards, all active cards are shown.
 
 ---
 
-## 3. Poll payment status (server-to-server)
+## 4. Poll payment status (server-to-server)
 
 ```
 GET /api/payment/status/<order_id>
@@ -161,7 +223,7 @@ Authorization: Bearer <service_token>
 
 Use this from your backend to check whether an order has been paid — the
 recommended way to confirm payment if you don't want to rely solely on the
-callback (see §5, callbacks aren't retried on failure).
+callback (see §6, callbacks aren't retried on failure).
 
 **Response — `200`**
 ```json
@@ -184,7 +246,7 @@ past as expired on your side too.)
 
 ---
 
-## 4. List your payments
+## 5. List your payments
 
 ```
 GET /api/payments/list
@@ -200,7 +262,7 @@ for a reconciliation job.
 
 ---
 
-## 5. Payment confirmation callback (webhook to you)
+## 6. Payment confirmation callback (webhook to you)
 
 If you set a **Callback URL** on your service (panel → Services → create/edit),
 the gateway calls it the moment a bank SMS matches one of your pending
@@ -231,7 +293,7 @@ customer a "payment failed" state), or reconcile periodically against
 
 ---
 
-## 6. Manual confirm (admin override)
+## 7. Manual confirm (admin override)
 
 ```
 POST /api/payment/manual-confirm
