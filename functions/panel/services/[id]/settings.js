@@ -1,5 +1,5 @@
 // functions/panel/services/[id]/settings.js — per-service amount/expiry policy
-import { getServiceById, updateServiceSettings } from "../../../../lib/db.js";
+import { getServiceById, updateServiceSettings, getDevices, setServiceDevice, isDeviceOnline } from "../../../../lib/db.js";
 import { readFlash, redirectWithFlash } from "../../../../lib/session.js";
 import { renderPage, esc } from "../../../../lib/render.js";
 
@@ -9,7 +9,12 @@ export async function onRequestGet(context) {
     const svc = await getServiceById(env, id);
     if (!svc) return redirectWithFlash("/panel/services", "سرویس پیدا نشد", "error");
 
-    const flash = readFlash(request);
+    const [devices, flash] = [await getDevices(env), readFlash(request)];
+
+    const deviceOptions = devices.map((d) => `
+      <option value="${d.id}" ${svc.device_id === d.id ? "selected" : ""}>
+        ${esc(d.name)} ${isDeviceOnline(d) ? "(آنلاین)" : "(آفلاین)"}${d.is_active ? "" : " — غیرفعال"}
+      </option>`).join("");
 
     return renderPage({
         title: `تنظیمات مبلغ/انقضا — ${svc.name}`,
@@ -34,6 +39,17 @@ export async function onRequestGet(context) {
       همیشه همین مقدار برای پرداخت‌های این سرویس استفاده می‌شود — حتی اگر خود سرویس هنگام ساخت پرداخت مقدار
       <span class="mono">expires_minutes</span> بفرستد، نادیده گرفته می‌شود.
     </p>
+    <label>دستگاه اختصاصی (اپ اندروید)
+      <select name="device_id">
+        <option value="">— بدون محدودیت (هر دستگاهی) —</option>
+        ${deviceOptions}
+      </select>
+    </label>
+    <p class="muted" style="margin-top:-6px">
+      اگر یک دستگاه انتخاب کنید، این سرویس فقط با پیامک‌هایی که از همان گوشی می‌رسند تطبیق داده می‌شود، و یکتاسازی مبلغ
+      هم فقط در بین سرویس‌های همان دستگاه (+ سرویس‌های بدون محدودیت) بررسی می‌شود — نه کل درگاه. برای مدیریت دستگاه‌ها به
+      <a href="/panel/devices">پنل → دستگاه‌ها</a> بروید.
+    </p>
     <div style="margin-top:16px">
       <button type="submit">ذخیره</button>
       <a class="btn secondary" href="/panel/services">بازگشت</a>
@@ -52,7 +68,10 @@ export async function onRequestPost(context) {
     const form = await request.formData();
     const autoAdjustAmount = form.get("auto_adjust_amount") === "1";
     const defaultExpireHours = Math.max(1, parseInt(form.get("default_expire_hours"), 10) || 1);
+    const deviceIdRaw = form.get("device_id");
+    const deviceId = deviceIdRaw ? parseInt(deviceIdRaw, 10) : null;
 
     await updateServiceSettings(env, id, autoAdjustAmount, defaultExpireHours);
+    await setServiceDevice(env, id, deviceId);
     return redirectWithFlash(`/panel/services/${id}/settings`, "تنظیمات ذخیره شد", "info");
 }

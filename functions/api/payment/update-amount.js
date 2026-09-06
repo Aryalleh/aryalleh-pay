@@ -42,8 +42,8 @@ export async function onRequestPost(context) {
         // conflicting amount, or reject with 409 if that's turned off.
         let finalAmount = newAmount;
         if (svc.auto_adjust_amount) {
-            finalAmount = await findUniqueAmountExcluding(env, newAmount, payment.id);
-        } else if (await isAmountPendingExcluding(env, newAmount, payment.id)) {
+            finalAmount = await findUniqueAmountExcluding(env, newAmount, payment.id, svc.device_id);
+        } else if (await isAmountPendingExcluding(env, newAmount, payment.id, svc.device_id)) {
             return jsonResponse({
                 ok: false,
                 error: "amount_conflict",

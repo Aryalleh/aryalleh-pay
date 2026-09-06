@@ -33,8 +33,8 @@ export async function onRequestPost(context) {
         // setting — some sellers already generate unique amounts themselves.
         let finalAmount = amountRials;
         if (svc.auto_adjust_amount) {
-            finalAmount = await findUniqueAmount(env, amountRials);
-        } else if (await isAmountPending(env, amountRials)) {
+            finalAmount = await findUniqueAmount(env, amountRials, svc.device_id);
+        } else if (await isAmountPending(env, amountRials, svc.device_id)) {
             return jsonResponse({
                 ok: false,
                 error: "amount_conflict",

@@ -15,7 +15,8 @@ export async function onRequestGet(context) {
         <td><span class="badge ${s.is_active ? "ok" : "off"}">${s.is_active ? "فعال" : "غیرفعال"}</span></td>
         <td class="muted" style="white-space:nowrap;font-size:.82rem">
           ${s.auto_adjust_amount ? "یکتاسازی خودکار" : "دستی (بدون تغییر)"}<br>
-          انقضا: ${esc(s.default_expire_hours ?? 1)} ساعت
+          انقضا: ${esc(s.default_expire_hours ?? 1)} ساعت<br>
+          دستگاه: ${s.device_name ? esc(s.device_name) : "بدون محدودیت"}
         </td>
         <td style="white-space:nowrap">
           <a class="btn secondary" href="/panel/services/${s.id}/settings">تنظیمات مبلغ/انقضا</a>

@@ -1,4 +1,17 @@
 -- schema.sql — AryallehPay D1 schema (Cloudflare)
+
+-- One row per Android SMS-forwarder phone. token authenticates that phone's
+-- calls to /api/sms/receive and /api/device/ping; last_seen_at is updated by
+-- either, and the panel treats a device as "online" if it's recent enough.
+CREATE TABLE IF NOT EXISTS devices (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT NOT NULL,
+    token        TEXT NOT NULL UNIQUE,
+    is_active    INTEGER DEFAULT 1,
+    last_seen_at TEXT,
+    created_at   TEXT DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS services (
     id                   INTEGER PRIMARY KEY AUTOINCREMENT,
     name                 TEXT NOT NULL UNIQUE,
@@ -13,6 +26,10 @@ CREATE TABLE IF NOT EXISTS services (
     -- Default payment expiry in hours, used when a payment/create call
     -- doesn't pass its own expires_minutes.
     default_expire_hours INTEGER DEFAULT 1,
+    -- Restricts this service to SMS/amount-uniqueness from one phone
+    -- (devices.id). NULL = unrestricted, matches from any device (or none
+    -- identified at all) — the original, pre-devices behavior.
+    device_id            INTEGER REFERENCES devices(id),
     created_at           TEXT DEFAULT (datetime('now'))
 );
 
